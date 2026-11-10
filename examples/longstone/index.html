@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longstone — temperature and custody records for pharmaceutical shipments</title>
+<meta name="description" content="Longstone records temperature and custody for pharmaceutical shipments. Handoff signatures, per-SKU stability envelopes, lot-level holds, and audit packs as PDF/A-3.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f7f4;
+  --surface:#f2f1ed;
+  --raised:#ebeae5;
+  --ink:#26251e;
+  --ink-rgb:38 37 30;
+  --muted:#65645e;
+  --accent:#34785c;
+  --line:rgb(38 37 30 / .1);
+  --line-strong:rgb(38 37 30 / .2);
+
+  --dark:#13111c;
+  --dark-raised:#181622;
+  --dark-line:#33323e;
+
+  --r-sm:4px;
+  --r-md:8px;
+  --r-panel:20px;
+
+  --display:"EB Garamond",Georgia,"Times New Roman",serif;
+  --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+
+  --page:1200px;
+  --gutter:clamp(20px,4vw,48px);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:400 16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased;
+}
+img,svg{max-width:100%}
+a{color:inherit}
+h1,h2,h3{margin:0;font-family:var(--display);font-weight:400;letter-spacing:-.015em}
+p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+.shell{max-width:var(--page);margin-inline:auto;border-inline:1px solid var(--line)}
+.wrap{padding-inline:var(--gutter)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.label{
+  font:500 11px/1 var(--body);
+  letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.label .n{color:var(--accent);margin-right:.7em}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:40px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand .mark{
+  width:16px;height:16px;border-radius:3px;background:var(--accent);flex:none;
+  box-shadow:inset 0 -4px 0 rgb(255 255 255 / .28);
+}
+.brand .name{font:500 21px/1 var(--display);letter-spacing:-.01em}
+.nav nav{display:flex;gap:28px;margin-inline-start:8px}
+.nav nav a{font-size:14px;color:var(--muted);text-decoration:none;transition:color .18s}
+.nav nav a:hover{color:var(--ink)}
+.nav .end{margin-inline-start:auto;display:flex;align-items:center;gap:16px}
+.nav .end a.quiet{font-size:14px;color:var(--muted);text-decoration:none}
+.nav .end a.quiet:hover{color:var(--ink)}
+
+.btn{
+  display:inline-flex;align-items:center;gap:.55em;
+  padding:11px 20px;border-radius:var(--r-md);border:1px solid transparent;
+  font:500 14px/1.2 var(--body);text-decoration:none;cursor:pointer;
+  transition:background .18s,border-color .18s,color .18s,translate .18s;
+}
+.btn-primary{background:var(--ink);color:var(--bg)}
+.btn-primary:hover{background:#3b3a33;translate:0 -1px}
+.btn-ghost{border-color:var(--line-strong);color:var(--ink);background:transparent}
+.btn-ghost:hover{background:var(--surface);border-color:rgb(38 37 30 / .34)}
+.btn-lg{padding:14px 24px;font-size:15px}
+
+/* hero */
+.hero{padding:96px 0 64px;border-bottom:1px solid var(--line)}
+.hero .top{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:clamp(32px,5vw,80px);align-items:end;margin-top:20px}
+.hero h1{
+  font-size:clamp(40px,6vw,82px);line-height:1.0;max-width:16ch;
+  text-wrap:balance;
+}
+.hero h1 .dim{color:rgb(var(--ink-rgb) / .55)}
+.hero .aside{border-top:1px solid var(--line);padding-top:20px}
+.hero .sub{max-width:46ch;font-size:16.5px;color:var(--muted);line-height:1.66}
+.hero .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.hero .foot{margin-top:20px;font-size:13px;color:var(--muted)}
+
+.shot{margin:56px 0 0;position:relative;border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--raised);padding:clamp(14px,2vw,22px)}
+.shot .chrome{display:flex;align-items:center;gap:8px;padding:0 4px 14px;color:var(--muted)}
+.shot .chrome i{width:8px;height:8px;border-radius:50%;background:rgb(38 37 30 / .16);display:block}
+.shot .chrome span{margin-inline-start:auto;font:500 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase}
+
+/* lane console, mirrors dashboard.html */
+.mini{display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.mini-side{padding:16px;border-inline-end:1px solid var(--line)}
+.mini-lanes{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:1px}
+.mini-lanes li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:9px;align-items:center;padding:8px;border-radius:var(--r-sm);font-variant-numeric:tabular-nums}
+.mini-lanes li.sel{background:var(--bg);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.mini-lanes i{width:6px;height:6px;border-radius:50%;background:var(--accent);display:block}
+.mini-lanes .exc i{background:var(--ink)}
+.mini-lanes .hold i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.mini-lanes b{font:500 12.5px/1.3 var(--body);white-space:nowrap}
+.mini-lanes small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-lanes .deg{font:500 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+.mini-link{display:inline-block;margin-top:12px;font-size:12px;color:var(--accent);text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:1px}
+.mini-main{padding:16px 16px 0;min-width:0;display:flex;flex-direction:column}
+.mini-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.mini-lot{font-size:12px;color:var(--muted);margin-top:4px}
+.mini-main svg{margin-bottom:auto}
+.mini-stats{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;padding:11px 0 14px;border-top:1px solid var(--line);font:500 11px/1.4 var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
+
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 10px;font:500 10px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line-strong);white-space:nowrap}
+.pill::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.pill.alert{background:var(--ink);color:var(--bg);border-color:var(--ink);margin-inline-start:auto}
+.pill.alert::before{background:var(--bg)}
+
+/* trace and hold cards */
+.tracecard,.holdcard{border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);overflow:hidden}
+.tracecard .head,.holdcard .head{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tracecard .head .label,.holdcard .head .label:first-child{flex:1}
+.tracecard .plot{padding:10px 8px 0}
+.tracecard .plot svg{display:block;width:100%;height:auto}
+.tracecard .foot{display:flex;flex-wrap:wrap;gap:6px 20px;padding:6px 16px 14px;font:500 11.5px/1.4 var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
+.tracecard .foot b{color:var(--ink);font-weight:500}
+.holdcard .row{padding:15px 16px;display:grid;gap:9px;border-bottom:1px solid var(--line)}
+.holdcard .row:last-child{border-bottom:0}
+.holdcard .meta{display:flex;align-items:baseline;gap:10px}
+.holdcard .code{font:500 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;color:var(--accent)}
+.holdcard .when{margin-inline-start:auto;font:500 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+.holdcard p{font-size:13px;color:var(--muted);line-height:1.55}
+.holdcard .btn{justify-self:start;font-size:12.5px;padding:8px 13px}
+.band .holdcard{background:var(--dark-raised);border-color:var(--dark-line)}
+.band .holdcard .head,.band .holdcard .row{border-color:var(--dark-line)}
+.band .holdcard p{color:#a1a0ab}
+.band .holdcard .code{color:#fff}
+.band .holdcard .when{color:#a1a0ab}
+
+/* proof strip */
+.proof{border-bottom:1px solid var(--line);background:var(--surface)}
+.proof .wrap{display:flex;align-items:baseline;gap:clamp(16px,3vw,44px);flex-wrap:wrap;padding-block:20px}
+.proof ul{display:flex;flex-wrap:wrap;gap:clamp(16px,3vw,44px);list-style:none;margin:0;padding:0}
+.proof li{font:500 12px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.proof li::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-right:.7em;vertical-align:2px}
+
+/* features */
+.feature{padding:88px 0;border-bottom:1px solid var(--line)}
+.feature .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(32px,5vw,72px);align-items:start}
+.feature.flip .grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+.feature.flip .copy{order:2}
+.feature h2{font-size:clamp(28px,3.1vw,40px);line-height:1.12;margin-top:18px;max-width:22ch}
+.feature p.body{margin-top:20px;max-width:46ch;font-size:16.5px;color:var(--muted);line-height:1.68}
+.feature p.body a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+
+/* sample record */
+.record{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.record .head{display:flex;gap:10px;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--line)}
+.record .head .label{margin-inline-start:auto}
+.record table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.record th{text-align:left;font:500 10.5px/1 var(--body);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--line)}
+.record td{padding:13px 16px;font-size:13.5px;border-bottom:1px solid var(--line);color:var(--ink)}
+.record tr:last-child td{border-bottom:0}
+.record td.t{color:var(--muted);font-size:12.5px;letter-spacing:.02em}
+.record td.sig{font-size:12.5px;color:var(--muted)}
+.record tr.gap td{color:var(--muted)}
+.record .flag{display:inline-flex;align-items:center;gap:6px;font:500 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.record .flag::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.record tr.gap .flag{color:var(--muted)}
+.record tr.gap .flag::before{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong)}
+
+/* code */
+pre.snippet{
+  margin:0;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 20px;overflow-x:auto;
+  font:400 12.5px/1.75 ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;color:#454545;
+}
+pre.snippet b{color:var(--accent);font-weight:500}
+
+/* dark band */
+.band{position:relative;background:var(--dark);color:#fff;padding:88px 0;border-block:1px solid var(--dark-line)}
+.band .shell{border-inline-color:var(--dark-line)}
+.band .label{color:#a1a0ab}
+.band .label .n{color:#fff}
+.band h2{color:#fff;font-size:clamp(28px,3.1vw,40px);line-height:1.12;margin-top:18px;max-width:22ch}
+.band p.body{margin-top:20px;max-width:46ch;font-size:16.5px;color:#a1a0ab;line-height:1.68}
+.band .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(32px,5vw,72px);align-items:start}
+.band .btn-ghost{border-color:var(--dark-line);color:#fff}
+.band .btn-ghost:hover{background:var(--dark-raised)}
+.band .actions{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+
+/* cta */
+.cta{padding:104px 0;text-align:center;border-bottom:1px solid var(--line)}
+.cta h2{font-size:clamp(38px,5.4vw,68px);line-height:1.02;margin-inline:auto;max-width:16ch}
+.cta p{margin:22px auto 0;max-width:48ch;color:var(--muted);font-size:16.5px;line-height:1.66}
+.cta .actions{margin-top:34px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+
+/* footer */
+footer{padding:56px 0 44px}
+footer .cols{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px}
+footer .brand .name{font-size:19px}
+footer p.one{margin-top:14px;max-width:32ch;font-size:13.5px;color:var(--muted);line-height:1.6}
+footer h3{font:500 11px/1 var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+footer ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+footer li a{font-size:13.5px;color:var(--muted);text-decoration:none}
+footer li a:hover{color:var(--ink)}
+footer .fine{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+
+@media (prefers-reduced-motion:no-preference){
+  .reveal{opacity:0;translate:0 16px;transition:opacity .7s ease,translate .7s cubic-bezier(.22,1,.36,1)}
+  .reveal.on{opacity:1;translate:0 0}
+}
+
+@media (max-width:900px){
+  .nav nav{display:none}
+  .feature .grid,.feature.flip .grid,.band .grid,footer .cols{grid-template-columns:minmax(0,1fr)}
+  .hero .top{grid-template-columns:minmax(0,1fr);gap:28px}
+  .hero h1{max-width:20ch}
+  .hero .aside{border-top:0;padding-top:0}
+  .feature.flip .copy{order:0}
+  .shell{border-inline:0}
+  /* a narrow split makes the trace 130px tall, so the console goes full width instead */
+  .mini{grid-template-columns:minmax(0,1fr)}
+  .mini-side{padding:14px 16px;border-inline-end:0;border-bottom:1px solid var(--line)}
+  .mini-lanes{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px 8px;margin-top:8px}
+  .mini-lanes li{padding:7px 6px;gap:7px}
+  .mini-lanes b{font-size:11.5px}
+  .mini-lanes .deg{font-size:11px}
+  .mini-lanes small{display:none}
+  .mini-link{margin-top:10px}
+}
+@media (max-width:720px){
+  .mini-lanes{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .hero{padding:56px 0 44px}
+  .hero .sub{font-size:16px}
+  .feature,.band{padding:56px 0}
+  .cta{padding:64px 0}
+  .hero .actions .btn,.cta .actions .btn{width:100%;justify-content:center}
+  .nav .end a.quiet{display:none}
+  .record th,.record td{padding-inline:12px}
+  /* svg labels scale below legibility here, the foot rows carry the numbers */
+  .mini-side{padding:14px}
+  .mini-main{padding:14px 14px 0}
+  .mini-head .label{white-space:nowrap}
+  .mini svg text,.tracecard svg text{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="shell">
+    <div class="wrap">
+      <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span><span class="name">Longstone</span></a>
+      <nav aria-label="Main">
+        <a href="#record">Records</a>
+        <a href="#envelope">Envelopes</a>
+        <a href="#holds">Holds</a>
+        <a href="#export">Exports</a>
+      </nav>
+      <div class="end">
+        <a class="quiet" href="dashboard.html">Live console</a>
+        <a class="quiet" href="#docs">Documentation</a>
+        <a class="btn btn-primary" href="#evaluate">Request an evaluation</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="shell"><div class="wrap">
+      <p class="label">Cold chain records</p>
+      <div class="top">
+        <h1>Every degree recorded, <span class="dim">and a signature on whoever held it.</span></h1>
+        <div class="aside">
+          <p class="sub">Longstone writes temperature and custody for pharmaceutical shipments. When a parcel leaves its stability envelope, the hold lands on the lot number before the next carrier scans it.</p>
+          <div class="actions">
+            <a class="btn btn-primary btn-lg" href="#evaluate">Request an evaluation</a>
+            <a class="btn btn-ghost btn-lg" href="#export">Read the export format</a>
+          </div>
+          <p class="foot">Read-only on one lane first. Nothing leaves quarantine without a quality signature.</p>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i><span>app.longstone.example</span></div>
+        <div class="mini">
+          <div class="mini-side">
+            <p class="label">Lanes today</p>
+            <ul class="mini-lanes">
+              <li><i aria-hidden="true"></i><span><b>PX-8841</b><small>Rotterdam → Basel</small></span><span class="deg">5.0°</span></li>
+              <li class="sel exc"><i aria-hidden="true"></i><span><b>PX-8842</b><small>Basel → Lyon</small></span><span class="deg">5.3°</span></li>
+              <li><i aria-hidden="true"></i><span><b>PX-8850</b><small>Dublin → Manchester</small></span><span class="deg">19.8°</span></li>
+              <li class="hold"><i aria-hidden="true"></i><span><b>PX-8863</b><small>Lyon → Milan</small></span><span class="deg">4.9°</span></li>
+              <li><i aria-hidden="true"></i><span><b>PX-8871</b><small>Frankfurt → Vienna</small></span><span class="deg">5.6°</span></li>
+            </ul>
+            <a class="mini-link" href="dashboard.html">Open the live console</a>
+          </div>
+          <div class="mini-main">
+            <div class="mini-head">
+              <div><p class="label">Lot PX-8842</p><p class="mini-lot">BIO-11 · Basel → Lyon</p></div>
+              <span class="pill alert">Excursion</span>
+            </div>
+            <svg viewBox="0 0 720 220" role="img" aria-label="Temperature trace for lot PX-8842 against its 2 to 8 degree envelope. One reading at 17:00 reaches 9.2 degrees.">
+              <rect x="40" y="60" width="666" height="110" fill="var(--accent)" opacity=".08"/>
+              <line x1="40" x2="706" y1="115" y2="115" stroke="var(--line-strong)" stroke-dasharray="3 4"/>
+              <line x1="40" x2="706" y1="60" y2="60" stroke="var(--line-strong)"/>
+              <line x1="40" x2="706" y1="170" y2="170" stroke="var(--line-strong)"/>
+              <path d="M40 74.7 L69 72.8 L97.9 74.7 L126.9 89.3 L155.8 87.5 L184.8 96.7 L213.7 98.5 L242.7 109.5 L271.7 100.3 L300.6 100.3 L329.6 93 L358.5 91.2 L387.5 85.7 L416.4 74.7 L445.4 78.3 L474.3 71 L503.3 76.5 L532.3 38 L561.2 89.3 L590.2 91.2 L619.1 102.2 L648.1 100.3 L677 102.2 L706 109.5" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle cx="532.3" cy="38" r="3.2" fill="var(--ink)"/>
+              <text x="532.3" y="28" text-anchor="middle" font-size="10" fill="var(--ink)">9.2°</text>
+              <text x="32" y="64" text-anchor="end" font-size="10" fill="var(--muted)">8°</text>
+              <text x="32" y="174" text-anchor="end" font-size="10" fill="var(--muted)">2°</text>
+            </svg>
+            <div class="mini-stats"><span>Envelope 2.0–8.0 °C</span><span>Peak 9.2 °C</span><span>1 hold open</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="proof" aria-label="Interoperability">
+    <div class="shell"><div class="wrap">
+      <p class="label">Speaks</p>
+      <ul>
+        <li>GS1 EPCIS 2.0</li>
+        <li>PDF/A-3</li>
+        <li>MQTT 5</li>
+        <li>REST</li>
+        <li>SFTP</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <section class="feature" id="record">
+    <div class="shell"><div class="wrap"><div class="grid">
+      <div class="copy reveal">
+        <p class="label"><span class="n">01</span>Chain of custody</p>
+        <h2>A gap in the chain is a missing signature, not a disputed log.</h2>
+        <p class="body">Each handoff hashes the sensor payload against the carrier's key and writes the digest to the shipment. If a scan never arrives, the record shows a hole at that timestamp instead of smoothing it into an average over the leg.</p>
+      </div>
+      <div class="record reveal">
+        <div class="head"><p class="label">Lot PX-8841</p><p class="label">Sample record</p></div>
+        <table>
+          <thead><tr><th scope="col">Time</th><th scope="col">Handoff</th><th scope="col">Seal</th></tr></thead>
+          <tbody>
+            <tr><td class="t">04:12 CET</td><td>Rotterdam, NL</td><td class="sig">7f3a…c1 <span class="flag">signed</span></td></tr>
+            <tr><td class="t">11:47 CET</td><td>Basel, CH</td><td class="sig">2d90…8e <span class="flag">signed</span></td></tr>
+            <tr class="gap"><td class="t">19:03 CET</td><td>Lyon, FR</td><td class="sig"><span class="flag">no scan</span></td></tr>
+            <tr><td class="t">22:30 CET</td><td>Lyon, FR</td><td class="sig">b415…44 <span class="flag">signed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div></div></div>
+  </section>
+
+  <section class="feature flip" id="envelope">
+    <div class="shell"><div class="wrap"><div class="grid">
+      <div class="copy reveal">
+        <p class="label"><span class="n">02</span>Envelope scoring</p>
+        <h2>Scored against the product's own range, not a threshold for the fleet.</h2>
+        <p class="body">Vaccines, biologics and excipients each hold their own permitted band, per SKU and per route. An excursion on one lane does not inherit the tolerance of another, and the band travels with the lot rather than sitting in a spreadsheet beside it.</p>
+      </div>
+      <div class="tracecard reveal">
+        <div class="head"><p class="label">Lot PX-8842 · 24 h</p><span class="pill alert">1 outside</span></div>
+        <div class="plot">
+          <svg viewBox="0 0 720 220" role="img" aria-label="Twenty four hour temperature trace for lot PX-8842. The reading at 17:00 crosses the 8 degree ceiling and reaches 9.2 degrees, then returns into the band.">
+            <rect x="40" y="60" width="666" height="110" fill="var(--accent)" opacity=".08"/>
+            <line x1="40" x2="706" y1="115" y2="115" stroke="var(--line-strong)" stroke-dasharray="3 4"/>
+            <line x1="40" x2="706" y1="60" y2="60" stroke="var(--line-strong)"/>
+            <line x1="40" x2="706" y1="170" y2="170" stroke="var(--line-strong)"/>
+            <path d="M40 74.7 L69 72.8 L97.9 74.7 L126.9 89.3 L155.8 87.5 L184.8 96.7 L213.7 98.5 L242.7 109.5 L271.7 100.3 L300.6 100.3 L329.6 93 L358.5 91.2 L387.5 85.7 L416.4 74.7 L445.4 78.3 L474.3 71 L503.3 76.5 L532.3 38 L561.2 89.3 L590.2 91.2 L619.1 102.2 L648.1 100.3 L677 102.2 L706 109.5" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="532.3" cy="38" r="3.2" fill="var(--ink)"/>
+            <text x="532.3" y="28" text-anchor="middle" font-size="10" fill="var(--ink)">9.2°</text>
+            <text x="32" y="64" text-anchor="end" font-size="10" fill="var(--muted)">8°</text>
+            <text x="32" y="119" text-anchor="end" font-size="10" fill="var(--muted)">5°</text>
+            <text x="32" y="174" text-anchor="end" font-size="10" fill="var(--muted)">2°</text>
+            <text x="40" y="212" font-size="10" fill="var(--muted)">00:00</text>
+            <text x="373" y="212" text-anchor="middle" font-size="10" fill="var(--muted)">12:00</text>
+            <text x="706" y="212" text-anchor="end" font-size="10" fill="var(--muted)">23:00</text>
+          </svg>
+        </div>
+        <div class="foot"><span>Envelope <b>2.0–8.0 °C</b></span><span>Min <b>5.3</b></span><span>Max <b>9.2</b></span><span>Outside band <b>1</b></span></div>
+      </div>
+    </div></div></div>
+  </section>
+
+  <section class="band" id="holds">
+    <div class="shell"><div class="wrap"><div class="grid">
+      <div class="copy reveal">
+        <p class="label"><span class="n">03</span>Lot holds</p>
+        <h2>A parcel that leaves its envelope is locked before the next scan.</h2>
+        <p class="body">The hold is written against the lot number, not the tracking number, so the receiving warehouse cannot book it into sellable stock. Release takes a quality signature and a reason code, both appended to the record.</p>
+        <div class="actions"><a class="btn btn-ghost" href="#evaluate">See how holds release</a></div>
+      </div>
+      <div class="holdcard reveal" id="holdqueue">
+        <div class="head"><p class="label">Hold queue</p><p class="label">2 open</p></div>
+        <div class="row">
+          <div class="meta"><span class="code">EXC-T8</span><span class="when">19:03</span></div>
+          <p>18 minutes above 8.0 °C at Lyon cross-dock, probe 2 of 3. Lot PX-8842.</p>
+          <a class="btn btn-ghost" href="dashboard.html#holds">Sign off in the console</a>
+        </div>
+        <div class="row">
+          <div class="meta"><span class="code">SIG-MISS</span><span class="when">11:26</span></div>
+          <p>Handoff signature missing at the tunnel exit read point. Lot PX-8863.</p>
+          <a class="btn btn-ghost" href="dashboard.html">Open the lane</a>
+        </div>
+      </div>
+    </div></div></div>
+  </section>
+
+  <section class="feature" id="export">
+    <div class="shell"><div class="wrap"><div class="grid">
+      <div class="copy reveal">
+        <p class="label"><span class="n">04</span>Audit export</p>
+        <h2>One file a reviewer can read without asking you a question.</h2>
+        <p class="body">Audit packs leave as PDF/A-3 with the raw sensor payload embedded, so a reviewer opens a single file rather than a folder of CSVs and a login. The EPCIS event stream rides alongside for the systems that want it.</p>
+      </div>
+      <div class="reveal">
+        <pre class="snippet" aria-label="Sample EPCIS event"><code>{
+  "type": "ObjectEvent",
+  "eventTime": "2026-11-04T04:12:07Z",
+  "bizStep": "shipping",
+  "disposition": "in_transit",
+  "epcList": ["lot:PX-8841"],
+  "readPoint": { "id": "loc:NL-RTM-04" },
+  <b>"sensor": {</b>
+    "minC": 2.4, "maxC": 8.1, "bandC": [2, 8],
+    "digest": "7f3a91c0e2…c1"
+  <b>}</b>
+}</code></pre>
+      </div>
+    </div></div></div>
+  </section>
+
+  <section class="cta" id="evaluate">
+    <div class="shell"><div class="wrap">
+      <h2>Start with one lane.</h2>
+      <p>Send a route and its product ranges. The lane runs read-only until the envelopes are signed off, and the first audit pack is built from its own history.</p>
+      <div class="actions">
+        <a class="btn btn-primary btn-lg" href="#evaluate">Request an evaluation</a>
+        <a class="btn btn-ghost btn-lg" href="#docs">Talk to the integration team</a>
+      </div>
+    </div></div>
+  </section>
+
+</main>
+
+<footer id="docs">
+  <div class="shell"><div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span><span class="name">Longstone</span></a>
+        <p class="one">Temperature and custody records for pharmaceutical shipments.</p>
+      </div>
+      <div><h3>Product</h3><ul><li><a href="#record">Chain of custody</a></li><li><a href="#envelope">Envelopes</a></li><li><a href="#holds">Lot holds</a></li><li><a href="#export">Audit export</a></li></ul></div>
+      <div><h3>Developers</h3><ul><li><a href="#export">EPCIS events</a></li><li><a href="#export">PDF/A-3 packs</a></li><li><a href="#envelope">Sensor ingest</a></li><li><a href="#docs">Status</a></li></ul></div>
+      <div><h3>Company</h3><ul><li><a href="#top">About</a></li><li><a href="#evaluate">Contact</a></li><li><a href="#top">Security</a></li><li><a href="#top">Privacy</a></li></ul></div>
+    </div>
+    <div class="fine"><span>© 2026 Longstone</span><span>Records are written once and appended, never edited.</span></div>
+  </div></div>
+</footer>
+
+<script>
+const els = document.querySelectorAll('.reveal');
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (calm || !('IntersectionObserver' in window)) {
+  els.forEach(el => el.classList.add('on'));
+} else {
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+    }
+  }, { rootMargin: '0px 0px -8% 0px' });
+  els.forEach(el => io.observe(el));
+}
+</script>
+</body>
+</html>
